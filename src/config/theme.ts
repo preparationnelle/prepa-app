@@ -1,31 +1,46 @@
 export const COLORS = {
+    // Orange principal
     primary: '#FF6A00',
+    // Variantes d'orange
+    primaryLight: '#FF8533',
+    primaryDark: '#E65C00',
+    primaryMuted: '#FF6A0020',
+
+    // Texte et fond
     secondary: '#1A1A2E',
     white: '#FFFFFF',
+
     gray: {
         light: '#F5F5F7',
         medium: '#C7C7CC',
         dark: '#636366',
     },
-    success: '#34C759',
-    error: '#FF3B30',
-    warning: '#FF9500',
-    background: '#F2F2F7',
+
+    // États - tous basés sur l'orange
+    success: '#FF8533',     // Orange clair (succès)
+    error: '#CC5500',       // Orange foncé (erreur)
+    warning: '#FF6A00',     // Orange (warning)
+
+    background: '#F8F8FA',
     card: '#FFFFFF',
+
     border: {
         light: '#E5E5EA',
         medium: '#C7C7CC',
     },
+
     text: {
         primary: '#1A1A2E',
         secondary: '#636366',
         light: '#8E8E93',
     },
+
+    // Accents - tous en orange ou neutres
     accent: {
-        blue: '#007AFF',
-        purple: '#5856D6',
-        pink: '#FF2D55',
-        teal: '#5AC8FA',
+        orange: '#FF6A00',
+        orangeLight: '#FF8533',
+        orangeDark: '#CC5500',
+        muted: '#FF6A0015',
     },
 };
 
@@ -80,3 +95,4 @@ export const SHADOWS = {
         elevation: 6,
     },
 };
+
