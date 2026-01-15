@@ -8,6 +8,7 @@ import { CollapsibleCard } from '../components/common/CollapsibleCard';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../config/supabase';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '../config/theme';
+import { getGrammarFeedback } from '../services/openai';
 
 interface TranslationScreenProps {
     navigation: any;
@@ -62,7 +63,6 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
                 setCurrentSentence(data);
             }
         } catch (error) {
-            console.error('Erreur lors du chargement de la phrase:', error);
             // Utiliser une phrase d'exemple en cas d'erreur
             setCurrentSentence({
                 id: 'example-1',
@@ -87,6 +87,12 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
 
         setSubmitting(true);
         try {
+            // VERIFICATION: Test OpenAI API
+            console.log("Requesting AI feedback...");
+            const feedback = await getGrammarFeedback(userTranslation);
+            console.log("AI Feedback received:", feedback);
+            Alert.alert("AI Feedback Verification", feedback || "No feedback received");
+
             // Enregistrer la traduction
             const { data: translationData, error: translationError } = await supabase
                 .from('translations')
@@ -108,6 +114,7 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
                 sentence: currentSentence,
                 userTranslation,
                 translationId: translationData?.id,
+                aiFeedback: feedback // Pass it along if we want
             });
 
             // Réinitialiser
