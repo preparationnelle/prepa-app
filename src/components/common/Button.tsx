@@ -42,7 +42,7 @@ export const Button: React.FC<ButtonProps> = ({
             style={buttonStyle}
             onPress={onPress}
             disabled={disabled || loading}
-            activeOpacity={0.8}
+            activeOpacity={0.7}
         >
             {loading ? (
                 <ActivityIndicator color={variant === 'primary' ? COLORS.white : COLORS.primary} />
@@ -56,11 +56,11 @@ export const Button: React.FC<ButtonProps> = ({
 const styles = StyleSheet.create({
     button: {
         paddingVertical: SPACING.md,
-        paddingHorizontal: SPACING.lg,
-        borderRadius: BORDER_RADIUS.md,
+        paddingHorizontal: SPACING.xl,
+        borderRadius: BORDER_RADIUS.lg,
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 50,
+        minHeight: 52,
     },
     primaryButton: {
         backgroundColor: COLORS.primary,
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     outlineButton: {
         backgroundColor: 'transparent',
         borderWidth: 2,
-        borderColor: COLORS.primary,
+        borderColor: COLORS.border.medium,
     },
     disabledButton: {
         opacity: 0.5,
@@ -79,6 +79,7 @@ const styles = StyleSheet.create({
     text: {
         fontSize: FONT_SIZES.md,
         fontWeight: '600',
+        letterSpacing: 0.3,
     },
     primaryText: {
         color: COLORS.white,
@@ -87,6 +88,6 @@ const styles = StyleSheet.create({
         color: COLORS.white,
     },
     outlineText: {
-        color: COLORS.primary,
+        color: COLORS.text.primary,
     },
 });

@@ -57,7 +57,9 @@ export const SignInScreen: React.FC<SignInScreenProps> = ({ navigation }) => {
             >
                 <ScrollView contentContainerStyle={styles.scrollContent}>
                     <View style={styles.header}>
-                        <Text style={styles.emoji}>👋</Text>
+                        <View style={styles.logoContainer}>
+                            <Text style={styles.logoText}>PR</Text>
+                        </View>
                         <Text style={styles.title}>Bon retour !</Text>
                         <Text style={styles.subtitle}>
                             Connectez-vous pour continuer votre apprentissage
@@ -132,9 +134,19 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: SPACING.xl,
     },
-    emoji: {
-        fontSize: 60,
+    logoContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: COLORS.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
         marginBottom: SPACING.md,
+    },
+    logoText: {
+        fontSize: 28,
+        fontWeight: '800',
+        color: COLORS.white,
     },
     title: {
         fontSize: FONT_SIZES.xxxl,

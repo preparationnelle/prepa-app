@@ -5,12 +5,30 @@ import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '../config/theme';
 
+import { GRAMMAR_SENTENCES } from '../data/grammarSentences';
+
 interface HomeScreenProps {
     navigation: any;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     const [translation, setTranslation] = useState('');
+
+    // Use the first sentence for the demo
+    const demoSentence = GRAMMAR_SENTENCES[0];
+
+    const handleVerify = () => {
+        if (!translation.trim()) {
+            alert('Veuillez entrer une traduction');
+            return;
+        }
+
+        navigation.navigate('Feedback', {
+            sentence: demoSentence,
+            userTranslation: translation,
+            translationId: null // No ID for demo mode
+        });
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -22,20 +40,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                     </View>
                     <Text style={styles.title}>Prepa Rationnelle</Text>
                     <Text style={styles.subtitle}>Translations</Text>
-                    <Text style={styles.description}>
-                        Progressez en langues étrangères grâce à des exercices de thème grammatical
-                        avec feedback pédagogique détaillé
-                    </Text>
                 </View>
 
                 {/* Interactive Demo Section */}
                 <View style={styles.demoSection}>
                     <Card style={styles.demoCard}>
                         <Text style={styles.demoTitle}>Essayez maintenant !</Text>
-                        <Text style={styles.demoLabel}>Phrase à traduire :</Text>
+                        <Text style={styles.demoLabel}>Phrase a traduire</Text>
                         <View style={styles.sentenceBox}>
+                            <View style={styles.sentenceQuote}>
+                                <Text style={styles.quoteIcon}>"</Text>
+                            </View>
                             <Text style={styles.sentenceText}>
-                                Je voudrais apprendre à parler couramment l'anglais.
+                                {demoSentence.french}
                             </Text>
                         </View>
                         <Text style={styles.demoLabel}>Votre traduction :</Text>
@@ -49,7 +66,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                         />
                         <Button
                             title="Vérifier ma traduction"
-                            onPress={() => alert('Fonctionnalité en cours de développement')}
+                            onPress={handleVerify}
                             variant="primary"
                             style={styles.demoButton}
                         />
@@ -58,33 +75,57 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
                 {/* Features */}
                 <View style={styles.features}>
+                    <Text style={styles.featuresTitle}>Fonctionnalites</Text>
+
                     <Card style={styles.featureCard}>
-                        <Text style={styles.featureTitle}>Traduction Interactive</Text>
+                        <View style={styles.featureHeader}>
+                            <View style={[styles.featureIndicator, { backgroundColor: '#FF6A00' }]} />
+                            <Text style={styles.featureTitle}>Traduction Interactive</Text>
+                        </View>
                         <Text style={styles.featureText}>
-                            Traduisez des phrases et recevez un feedback immédiat sur votre grammaire
+                            Traduisez des phrases et recevez un feedback immediat sur votre grammaire
                         </Text>
                     </Card>
 
                     <Card style={styles.featureCard}>
-                        <Text style={styles.featureTitle}>Suivi de Progression</Text>
+                        <View style={styles.featureHeader}>
+                            <View style={[styles.featureIndicator, { backgroundColor: '#34C759' }]} />
+                            <Text style={styles.featureTitle}>Suivi de Progression</Text>
+                        </View>
                         <Text style={styles.featureText}>
-                            Visualisez vos progrès et identifiez vos axes d'amélioration
+                            Visualisez vos progres et identifiez vos axes d'amelioration
                         </Text>
                     </Card>
 
                     <Card style={styles.featureCard}>
-                        <Text style={styles.featureTitle}>Leçons de Grammaire</Text>
+                        <View style={styles.featureHeader}>
+                            <View style={[styles.featureIndicator, { backgroundColor: '#007AFF' }]} />
+                            <Text style={styles.featureTitle}>Lecons de Grammaire</Text>
+                        </View>
                         <Text style={styles.featureText}>
-                            Accédez à des leçons complètes pour renforcer vos connaissances
+                            Accedez a des lecons completes pour renforcer vos connaissances
                         </Text>
                     </Card>
 
                     <Card style={styles.featureCard}>
-                        <Text style={styles.featureTitle}>Mode Test</Text>
+                        <View style={styles.featureHeader}>
+                            <View style={[styles.featureIndicator, { backgroundColor: '#5856D6' }]} />
+                            <Text style={styles.featureTitle}>Mode Test</Text>
+                        </View>
                         <Text style={styles.featureText}>
-                            Testez vos compétences avec des séries de phrases chronométrées
+                            Testez vos competences avec des series de phrases chronometrees
                         </Text>
                     </Card>
+                </View>
+
+                {/* Call to Action */}
+                <View style={styles.ctaContainer}>
+                    <Button
+                        title="Explorer la banque de phrases"
+                        onPress={() => navigation.navigate('SentencesList')}
+                        variant="outline"
+                        style={styles.ctaButton}
+                    />
                 </View>
 
 
@@ -153,25 +194,36 @@ const styles = StyleSheet.create({
         paddingHorizontal: SPACING.lg,
         marginBottom: SPACING.xl,
     },
-    featureCard: {
-        alignItems: 'center',
-    },
-    featureIcon: {
-        fontSize: 40,
+    featuresTitle: {
+        fontSize: FONT_SIZES.xl,
+        fontWeight: '700',
+        color: COLORS.text.primary,
         marginBottom: SPACING.md,
     },
-    featureTitle: {
-        fontSize: FONT_SIZES.lg,
-        fontWeight: '700',
-        color: COLORS.secondary,
+    featureCard: {
         marginBottom: SPACING.sm,
-        textAlign: 'center',
+    },
+    featureHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: SPACING.sm,
+    },
+    featureIndicator: {
+        width: 4,
+        height: 24,
+        borderRadius: 2,
+        marginRight: SPACING.sm,
+    },
+    featureTitle: {
+        fontSize: FONT_SIZES.md,
+        fontWeight: '600',
+        color: COLORS.text.primary,
     },
     featureText: {
         fontSize: FONT_SIZES.sm,
         color: COLORS.text.secondary,
-        textAlign: 'center',
         lineHeight: 20,
+        paddingLeft: SPACING.md + 4,
     },
     ctaContainer: {
         paddingHorizontal: SPACING.lg,
@@ -210,18 +262,41 @@ const styles = StyleSheet.create({
         marginBottom: SPACING.sm,
     },
     sentenceBox: {
-        backgroundColor: COLORS.primary + '10',
-        borderLeftWidth: 4,
-        borderLeftColor: COLORS.primary,
-        padding: SPACING.md,
-        borderRadius: BORDER_RADIUS.md,
+        backgroundColor: COLORS.white,
+        padding: SPACING.lg,
+        borderRadius: BORDER_RADIUS.lg,
         marginBottom: SPACING.lg,
+        borderWidth: 1,
+        borderColor: COLORS.border.light,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 4,
+    },
+    sentenceQuote: {
+        position: 'absolute',
+        top: -8,
+        left: SPACING.md,
+        backgroundColor: COLORS.primary,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    quoteIcon: {
+        fontSize: 24,
+        fontWeight: '700',
+        color: COLORS.white,
+        marginTop: -4,
     },
     sentenceText: {
-        fontSize: FONT_SIZES.md,
+        fontSize: FONT_SIZES.lg,
+        fontWeight: '500',
         color: COLORS.text.primary,
-        fontStyle: 'italic',
-        lineHeight: 22,
+        lineHeight: 28,
+        marginTop: SPACING.sm,
     },
     input: {
         backgroundColor: COLORS.white,

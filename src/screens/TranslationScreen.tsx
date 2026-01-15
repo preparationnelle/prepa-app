@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, Alert, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, Alert, ActivityIndicator, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
@@ -8,7 +8,8 @@ import { CollapsibleCard } from '../components/common/CollapsibleCard';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../config/supabase';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '../config/theme';
-import { getGrammarFeedback } from '../services/openai';
+import { GRAMMAR_SENTENCES } from '../data/grammarSentences';
+import { GrammarSentence } from '../types/grammar';
 
 interface TranslationScreenProps {
     navigation: any;
@@ -33,10 +34,40 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
     const [currentIndex, setCurrentIndex] = useState(1);
     const [totalSentences] = useState(102);
     const [examMode, setExamMode] = useState(false);
+    const [showSentenceList, setShowSentenceList] = useState(false);
 
     useEffect(() => {
         loadRandomSentence();
     }, [selectedLanguage]);
+
+
+    const getRandomLocalSentence = (language: string): Sentence => {
+        // Filter for sentences where the target language matches (currently all are English targets from French source in the data)
+        const localSentences = GRAMMAR_SENTENCES || [];
+        if (localSentences.length === 0) {
+            // Fallback if data is missing
+            return {
+                id: 'fallback-1',
+                phrase_originale: 'Les tensions géopolitiques...',
+                langue_source: 'Français',
+                langue_cible: 'Anglais',
+                theme_grammatical: 'Exemple',
+                niveau: 'Intermédiaire'
+            };
+        }
+
+        const randomIndex = Math.floor(Math.random() * localSentences.length);
+        const sentence = localSentences[randomIndex];
+
+        return {
+            id: sentence.id,
+            phrase_originale: sentence.french,
+            langue_source: 'Français',
+            langue_cible: 'Anglais', // Hardcoded as the dataset is specifically English target
+            theme_grammatical: sentence.theme,
+            niveau: sentence.difficulty_level.charAt(0).toUpperCase() + sentence.difficulty_level.slice(1),
+        };
+    };
 
     const loadRandomSentence = async () => {
         setLoading(true);
@@ -48,30 +79,15 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
                 .limit(1)
                 .single();
 
-            if (error) {
-                // Si aucune phrase n'existe, créer une phrase d'exemple
-                console.log('Aucune phrase trouvée, utilisation d\'une phrase d\'exemple');
-                setCurrentSentence({
-                    id: 'example-1',
-                    phrase_originale: 'Les tensions géopolitiques entre la Chine et les États-Unis s\'intensifient dans le domaine technologique.',
-                    langue_source: 'Français',
-                    langue_cible: selectedLanguage.charAt(0).toUpperCase() + selectedLanguage.slice(1),
-                    theme_grammatical: 'Relations internationales et géopolitique',
-                    niveau: 'Avancé',
-                });
+            if (error || !data) {
+                console.log('Utilisation des données locales');
+                setCurrentSentence(getRandomLocalSentence(selectedLanguage));
             } else {
                 setCurrentSentence(data);
             }
         } catch (error) {
-            // Utiliser une phrase d'exemple en cas d'erreur
-            setCurrentSentence({
-                id: 'example-1',
-                phrase_originale: 'Les tensions géopolitiques entre la Chine et les États-Unis s\'intensifient dans le domaine technologique.',
-                langue_source: 'Français',
-                langue_cible: selectedLanguage.charAt(0).toUpperCase() + selectedLanguage.slice(1),
-                theme_grammatical: 'Relations internationales et géopolitique',
-                niveau: 'Avancé',
-            });
+            console.log('Erreur Supabase, repli sur local:', error);
+            setCurrentSentence(getRandomLocalSentence(selectedLanguage));
         } finally {
             setLoading(false);
         }
@@ -87,11 +103,11 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
 
         setSubmitting(true);
         try {
-            // VERIFICATION: Test OpenAI API
-            console.log("Requesting AI feedback...");
-            const feedback = await getGrammarFeedback(userTranslation);
-            console.log("AI Feedback received:", feedback);
-            Alert.alert("AI Feedback Verification", feedback || "No feedback received");
+            // OLD VERIFICATION CODE - Commented out as feedback is now generated in FeedbackScreen
+            // console.log("Requesting AI feedback...");
+            // const feedback = await getGrammarFeedback(userTranslation);
+            // console.log("AI Feedback received:", feedback);
+            // Alert.alert("AI Feedback Verification", feedback || "No feedback received");
 
             // Enregistrer la traduction
             const { data: translationData, error: translationError } = await supabase
@@ -101,7 +117,7 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
                     sentence_id: currentSentence.id,
                     reponse_utilisateur: userTranslation,
                     score: 0,
-                })
+                } as any)
                 .select()
                 .single();
 
@@ -113,8 +129,7 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
             navigation.navigate('Feedback', {
                 sentence: currentSentence,
                 userTranslation,
-                translationId: translationData?.id,
-                aiFeedback: feedback // Pass it along if we want
+                translationId: (translationData as any)?.id,
             });
 
             // Réinitialiser
@@ -125,6 +140,23 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const handleSelectSentence = (sentence: GrammarSentence) => {
+        // Map GrammarSentence to the component's Sentence interface
+        // Note: GrammarSentence uses 'french' for the text, Sentence uses 'phrase_originale'
+        const selectedSentence: Sentence = {
+            id: sentence.id,
+            phrase_originale: sentence.french,
+            langue_source: 'Français',
+            langue_cible: 'Anglais',
+            theme_grammatical: sentence.theme,
+            niveau: sentence.difficulty_level.charAt(0).toUpperCase() + sentence.difficulty_level.slice(1),
+        };
+
+        setCurrentSentence(selectedSentence);
+        setUserTranslation('');
+        setShowSentenceList(false);
     };
 
     const handlePrevious = () => {
@@ -175,12 +207,21 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
                     </TouchableOpacity>
                 </View>
 
+                {/* Sentence Selection Button */}
+                <View style={styles.selectionButtonContainer}>
+                    <TouchableOpacity
+                        style={styles.selectionButton}
+                        onPress={() => setShowSentenceList(true)}
+                    >
+                        <Text style={styles.selectionButtonText}>Voir toutes les phrases</Text>
+                    </TouchableOpacity>
+                </View>
+
                 {/* Grammatical Theme Card */}
                 {currentSentence && (
                     <View style={styles.section}>
                         <CollapsibleCard
                             title={currentSentence.theme_grammatical}
-                            icon="📚"
                             defaultExpanded={false}
                         >
                             <Text style={styles.themeDescription}>
@@ -196,7 +237,6 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
                         <Card style={styles.phraseCard}>
                             <View style={styles.phraseHeader}>
                                 <View style={styles.phraseLabel}>
-                                    <Text style={styles.phraseLabelIcon}>✏️</Text>
                                     <Text style={styles.phraseLabelText}>PHRASE À TRADUIRE</Text>
                                 </View>
                                 <View style={styles.badges}>
@@ -237,7 +277,6 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
                 <View style={styles.section}>
                     <Card style={styles.inputCard}>
                         <View style={styles.inputHeader}>
-                            <Text style={styles.inputLabelIcon}>💬</Text>
                             <Text style={styles.inputLabel}>
                                 Votre traduction en {selectedLanguage} :
                             </Text>
@@ -270,6 +309,47 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
                     Utilisez les flèches ← → du clavier pour naviguer
                 </Text>
             </ScrollView>
+
+            {/* Sentence Selection Modal */}
+            <Modal
+                visible={showSentenceList}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setShowSentenceList(false)}
+            >
+                <SafeAreaView style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Choisir une phrase</Text>
+                            <TouchableOpacity
+                                onPress={() => setShowSentenceList(false)}
+                                style={styles.closeButton}
+                            >
+                                <Text style={styles.closeButtonText}>✕</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <FlatList
+                            data={GRAMMAR_SENTENCES}
+                            keyExtractor={(item) => item.id}
+                            style={styles.list}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={styles.sentenceItem}
+                                    onPress={() => handleSelectSentence(item)}
+                                >
+                                    <View style={styles.sentenceHeader}>
+                                        <Text style={styles.sentenceTheme}>{item.theme}</Text>
+                                        <Text style={styles.sentenceLevel}>{item.difficulty_level}</Text>
+                                    </View>
+                                    <Text style={styles.sentenceText} numberOfLines={2}>{item.french}</Text>
+                                </TouchableOpacity>
+                            )}
+                            ItemSeparatorComponent={() => <View style={styles.separator} />}
+                        />
+                    </View>
+                </SafeAreaView>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -470,5 +550,84 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: SPACING.md,
         fontStyle: 'italic',
+    },
+    selectionButtonContainer: {
+        paddingHorizontal: SPACING.lg,
+        marginBottom: SPACING.lg,
+    },
+    selectionButton: {
+        backgroundColor: COLORS.white,
+        paddingVertical: SPACING.md,
+        alignItems: 'center',
+        borderRadius: BORDER_RADIUS.md,
+        borderWidth: 1,
+        borderColor: COLORS.primary,
+    },
+    selectionButtonText: {
+        color: COLORS.primary,
+        fontWeight: '600',
+        fontSize: FONT_SIZES.md,
+    },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: COLORS.background,
+        borderTopLeftRadius: BORDER_RADIUS.xl,
+        borderTopRightRadius: BORDER_RADIUS.xl,
+        height: '80%',
+        padding: SPACING.lg,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: SPACING.lg,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border.light,
+        paddingBottom: SPACING.md,
+    },
+    modalTitle: {
+        fontSize: FONT_SIZES.xl,
+        fontWeight: '700',
+        color: COLORS.secondary,
+    },
+    closeButton: {
+        padding: SPACING.sm,
+    },
+    closeButtonText: {
+        fontSize: FONT_SIZES.lg,
+        color: COLORS.text.secondary,
+    },
+    list: {
+        flex: 1,
+    },
+    sentenceItem: {
+        paddingVertical: SPACING.md,
+    },
+    sentenceHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: SPACING.xs,
+    },
+    sentenceTheme: {
+        fontSize: FONT_SIZES.xs,
+        color: COLORS.primary,
+        fontWeight: '600',
+        textTransform: 'uppercase',
+    },
+    sentenceLevel: {
+        fontSize: FONT_SIZES.xs,
+        color: COLORS.text.light,
+    },
+    sentenceText: {
+        fontSize: FONT_SIZES.md,
+        color: COLORS.secondary,
+    },
+    separator: {
+        height: 1,
+        backgroundColor: COLORS.border.light,
     },
 });

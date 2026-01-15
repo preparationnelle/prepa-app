@@ -1,25 +1,31 @@
 export const COLORS = {
     primary: '#FF6A00',
-    secondary: '#000000',
+    secondary: '#1A1A2E',
     white: '#FFFFFF',
     gray: {
-        light: '#F5F5F5',
-        medium: '#CCCCCC',
-        dark: '#666666',
+        light: '#F5F5F7',
+        medium: '#C7C7CC',
+        dark: '#636366',
     },
-    success: '#4CAF50',
-    error: '#F44336',
-    warning: '#FFC107',
-    background: '#F0F4F8', // Light blue-gray background
+    success: '#34C759',
+    error: '#FF3B30',
+    warning: '#FF9500',
+    background: '#F2F2F7',
     card: '#FFFFFF',
     border: {
-        light: '#E5E7EB',
-        medium: '#D1D5DB',
+        light: '#E5E5EA',
+        medium: '#C7C7CC',
     },
     text: {
-        primary: '#000000',
-        secondary: '#666666',
-        light: '#999999',
+        primary: '#1A1A2E',
+        secondary: '#636366',
+        light: '#8E8E93',
+    },
+    accent: {
+        blue: '#007AFF',
+        purple: '#5856D6',
+        pink: '#FF2D55',
+        teal: '#5AC8FA',
     },
 };
 
@@ -47,5 +53,30 @@ export const BORDER_RADIUS = {
     md: 8,
     lg: 12,
     xl: 16,
+    xxl: 24,
     full: 9999,
+};
+
+export const SHADOWS = {
+    sm: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
+    },
+    md: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    lg: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 16,
+        elevation: 6,
+    },
 };

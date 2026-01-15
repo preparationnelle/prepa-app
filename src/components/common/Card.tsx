@@ -16,7 +16,7 @@ export const Card: React.FC<CardProps> = ({ title, children, onPress, style }) =
         <Container
             style={[styles.card, style]}
             onPress={onPress}
-            activeOpacity={onPress ? 0.8 : 1}
+            activeOpacity={onPress ? 0.7 : 1}
         >
             {title && <Text style={styles.title}>{title}</Text>}
             {children}
@@ -27,17 +27,16 @@ export const Card: React.FC<CardProps> = ({ title, children, onPress, style }) =
 const styles = StyleSheet.create({
     card: {
         backgroundColor: COLORS.white,
-        borderRadius: BORDER_RADIUS.lg,
+        borderRadius: BORDER_RADIUS.xl,
         padding: SPACING.lg,
         marginBottom: SPACING.md,
-        shadowColor: COLORS.secondary,
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        borderWidth: 1,
+        borderColor: COLORS.border.light,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 2,
     },
     title: {
         fontSize: FONT_SIZES.lg,

@@ -24,4 +24,5 @@ export type RootStackParamList = {
     History: undefined;
     Lessons: undefined;
     Test: undefined;
+    SentencesList: undefined;
 };

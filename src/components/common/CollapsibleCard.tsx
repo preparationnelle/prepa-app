@@ -4,14 +4,12 @@ import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '../../config/theme';
 
 interface CollapsibleCardProps {
     title: string;
-    icon?: string;
     children?: React.ReactNode;
     defaultExpanded?: boolean;
 }
 
 export const CollapsibleCard: React.FC<CollapsibleCardProps> = ({
     title,
-    icon,
     children,
     defaultExpanded = false,
 }) => {
@@ -25,10 +23,10 @@ export const CollapsibleCard: React.FC<CollapsibleCardProps> = ({
                 activeOpacity={0.7}
             >
                 <View style={styles.headerContent}>
-                    {icon && <Text style={styles.icon}>{icon}</Text>}
+                    <View style={styles.indicator} />
                     <Text style={styles.title}>{title}</Text>
                 </View>
-                <Text style={styles.chevron}>{isExpanded ? '▲' : '▼'}</Text>
+                <Text style={styles.chevron}>{isExpanded ? '−' : '+'}</Text>
             </TouchableOpacity>
             {isExpanded && children && (
                 <View style={styles.content}>{children}</View>
@@ -40,7 +38,7 @@ export const CollapsibleCard: React.FC<CollapsibleCardProps> = ({
 const styles = StyleSheet.create({
     container: {
         backgroundColor: COLORS.card,
-        borderRadius: BORDER_RADIUS.lg,
+        borderRadius: BORDER_RADIUS.xl,
         borderWidth: 1,
         borderColor: COLORS.border.light,
         overflow: 'hidden',
@@ -55,18 +53,24 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: SPACING.sm,
+        flex: 1,
     },
-    icon: {
-        fontSize: FONT_SIZES.lg,
+    indicator: {
+        width: 4,
+        height: 20,
+        borderRadius: 2,
+        backgroundColor: COLORS.primary,
     },
     title: {
         fontSize: FONT_SIZES.md,
         fontWeight: '600',
-        color: COLORS.text.secondary,
+        color: COLORS.text.primary,
+        flex: 1,
     },
     chevron: {
-        fontSize: FONT_SIZES.xs,
+        fontSize: FONT_SIZES.xl,
         color: COLORS.text.light,
+        fontWeight: '300',
     },
     content: {
         padding: SPACING.md,

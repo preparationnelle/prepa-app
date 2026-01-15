@@ -23,32 +23,34 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
 
     const menuItems = [
         {
-            icon: '✍️',
             title: 'Traduire une phrase',
             description: 'Pratiquez avec des exercices de traduction',
             color: '#FF6A00',
             onPress: () => navigation.navigate('Translation'),
         },
         {
-            icon: '📊',
             title: 'Historique',
             description: 'Consultez vos traductions passées',
             color: '#4CAF50',
             onPress: () => navigation.navigate('History'),
         },
         {
-            icon: '📖',
             title: 'Leçons de grammaire',
             description: 'Renforcez vos connaissances',
             color: '#2196F3',
             onPress: () => navigation.navigate('Lessons'),
         },
         {
-            icon: '🎯',
             title: 'Mode test',
             description: 'Testez vos compétences',
             color: '#9C27B0',
             onPress: () => navigation.navigate('Test'),
+        },
+        {
+            title: 'Bibliothèque',
+            description: 'Explorez tous les thèmes disponibles',
+            color: '#E91E63',
+            onPress: () => navigation.navigate('SentencesList'),
         },
     ];
 
@@ -58,7 +60,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
                 {/* Header */}
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.greeting}>Bonjour ! 👋</Text>
+                        <Text style={styles.greeting}>Bonjour !</Text>
                         <Text style={styles.email}>{user?.email}</Text>
                     </View>
                     <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
@@ -92,9 +94,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
                             onPress={item.onPress}
                             activeOpacity={0.7}
                         >
-                            <View style={[styles.iconContainer, { backgroundColor: item.color + '20' }]}>
-                                <Text style={styles.menuIcon}>{item.icon}</Text>
-                            </View>
+                            <View style={[styles.colorIndicator, { backgroundColor: item.color }]} />
                             <View style={styles.menuContent}>
                                 <Text style={styles.menuTitle}>{item.title}</Text>
                                 <Text style={styles.menuDescription}>{item.description}</Text>
@@ -211,16 +211,11 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 3,
     },
-    iconContainer: {
-        width: 50,
-        height: 50,
-        borderRadius: BORDER_RADIUS.md,
-        alignItems: 'center',
-        justifyContent: 'center',
+    colorIndicator: {
+        width: 4,
+        height: 40,
+        borderRadius: 2,
         marginRight: SPACING.md,
-    },
-    menuIcon: {
-        fontSize: 24,
     },
     menuContent: {
         flex: 1,

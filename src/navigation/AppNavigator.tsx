@@ -15,6 +15,7 @@ import { FeedbackScreen } from '../screens/FeedbackScreen';
 import { HistoryScreen } from '../screens/HistoryScreen';
 import { LessonsScreen } from '../screens/LessonsScreen';
 import { TestScreen } from '../screens/TestScreen';
+import { SentencesListScreen } from '../screens/SentencesListScreen';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -62,6 +63,16 @@ export const AppNavigator: React.FC = () => {
                             component={SignInScreen}
                             options={{ title: 'Connexion' }}
                         />
+                        <Stack.Screen
+                            name="SentencesList"
+                            component={SentencesListScreen}
+                            options={{ title: 'Phrases' }}
+                        />
+                        <Stack.Screen
+                            name="Feedback"
+                            component={FeedbackScreen}
+                            options={{ title: 'Feedback' }}
+                        />
                     </>
                 ) : (
                     // Protected screens
@@ -95,6 +106,11 @@ export const AppNavigator: React.FC = () => {
                             name="Test"
                             component={TestScreen}
                             options={{ title: 'Mode Test' }}
+                        />
+                        <Stack.Screen
+                            name="SentencesList"
+                            component={SentencesListScreen}
+                            options={{ title: 'Phrases' }}
                         />
                     </>
                 )}

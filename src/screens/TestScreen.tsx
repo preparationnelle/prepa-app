@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
-import { COLORS, SPACING, FONT_SIZES } from '../config/theme';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '../config/theme';
 
 interface TestScreenProps {
     navigation: any;
@@ -14,7 +14,9 @@ export const TestScreen: React.FC<TestScreenProps> = ({ navigation }) => {
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
                 <View style={styles.header}>
-                    <Text style={styles.emoji}>🎯</Text>
+                    <View style={styles.iconBadge}>
+                        <Text style={styles.iconBadgeText}>TEST</Text>
+                    </View>
                     <Text style={styles.title}>Mode Test</Text>
                     <Text style={styles.subtitle}>
                         Testez vos compétences avec une série de phrases chronométrées
@@ -32,10 +34,12 @@ export const TestScreen: React.FC<TestScreenProps> = ({ navigation }) => {
                 </Card>
 
                 <Card style={styles.comingSoon}>
-                    <Text style={styles.comingSoonEmoji}>🚧</Text>
-                    <Text style={styles.comingSoonTitle}>Bientôt disponible</Text>
+                    <View style={styles.comingSoonBadge}>
+                        <Text style={styles.comingSoonBadgeText}>EN DEVELOPPEMENT</Text>
+                    </View>
+                    <Text style={styles.comingSoonTitle}>Bientot disponible</Text>
                     <Text style={styles.comingSoonText}>
-                        Le mode test est en cours de développement. Revenez bientôt pour tester vos compétences !
+                        Le mode test est en cours de developpement. Revenez bientot pour tester vos competences !
                     </Text>
                 </Card>
 
@@ -63,9 +67,19 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: SPACING.xl,
     },
-    emoji: {
-        fontSize: 80,
+    iconBadge: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: COLORS.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
         marginBottom: SPACING.md,
+    },
+    iconBadgeText: {
+        fontSize: FONT_SIZES.lg,
+        fontWeight: '800',
+        color: COLORS.white,
     },
     title: {
         fontSize: FONT_SIZES.xxxl,
@@ -95,9 +109,18 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.warning + '10',
         alignItems: 'center',
     },
-    comingSoonEmoji: {
-        fontSize: 60,
+    comingSoonBadge: {
+        backgroundColor: COLORS.warning,
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.sm,
+        borderRadius: BORDER_RADIUS.md,
         marginBottom: SPACING.md,
+    },
+    comingSoonBadgeText: {
+        fontSize: FONT_SIZES.sm,
+        fontWeight: '700',
+        color: COLORS.secondary,
+        letterSpacing: 1,
     },
     comingSoonTitle: {
         fontSize: FONT_SIZES.lg,
