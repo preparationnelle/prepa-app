@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, Alert, ActivityIndicator, TouchableOpacity, Modal, FlatList } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TextInput, Alert, ActivityIndicator, TouchableOpacity, Modal, FlatList, Animated, PanResponder, Dimensions } from 'react-native';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const SWIPE_THRESHOLD = 80;
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
@@ -35,6 +38,118 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
     const [totalSentences] = useState(102);
     const [examMode, setExamMode] = useState(false);
     const [showSentenceList, setShowSentenceList] = useState(false);
+
+    // Animation for swipe
+    const swipeAnim = useRef(new Animated.Value(0)).current;
+    const opacityAnim = useRef(new Animated.Value(1)).current;
+
+    // Track sentence index within local data
+    const [sentenceArrayIndex, setSentenceArrayIndex] = useState(0);
+
+    const panResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => true,
+            onMoveShouldSetPanResponder: (_, gestureState) => {
+                return Math.abs(gestureState.dx) > 10;
+            },
+            onPanResponderMove: (_, gestureState) => {
+                swipeAnim.setValue(gestureState.dx);
+            },
+            onPanResponderRelease: (_, gestureState) => {
+                if (gestureState.dx > SWIPE_THRESHOLD) {
+                    // Swipe right - previous sentence
+                    handleSwipe('right');
+                } else if (gestureState.dx < -SWIPE_THRESHOLD) {
+                    // Swipe left - next sentence
+                    handleSwipe('left');
+                } else {
+                    // Reset position
+                    Animated.spring(swipeAnim, {
+                        toValue: 0,
+                        useNativeDriver: true,
+                    }).start();
+                }
+            },
+        })
+    ).current;
+
+    const handleSwipe = (direction: 'left' | 'right') => {
+        const targetX = direction === 'left' ? -SCREEN_WIDTH : SCREEN_WIDTH;
+
+        Animated.parallel([
+            Animated.timing(swipeAnim, {
+                toValue: targetX,
+                duration: 200,
+                useNativeDriver: true,
+            }),
+            Animated.timing(opacityAnim, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+            }),
+        ]).start(() => {
+            // Change sentence
+            if (direction === 'left') {
+                goToNextSentence();
+            } else {
+                goToPreviousSentence();
+            }
+
+            // Reset animation from opposite side
+            swipeAnim.setValue(direction === 'left' ? SCREEN_WIDTH : -SCREEN_WIDTH);
+
+            Animated.parallel([
+                Animated.spring(swipeAnim, {
+                    toValue: 0,
+                    useNativeDriver: true,
+                    tension: 50,
+                    friction: 8,
+                }),
+                Animated.timing(opacityAnim, {
+                    toValue: 1,
+                    duration: 200,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+        });
+    };
+
+    const goToNextSentence = () => {
+        const localSentences = GRAMMAR_SENTENCES || [];
+        const newIndex = (sentenceArrayIndex + 1) % localSentences.length;
+        setSentenceArrayIndex(newIndex);
+        loadSentenceByIndex(newIndex);
+        setUserTranslation('');
+        if (currentIndex < totalSentences) {
+            setCurrentIndex(currentIndex + 1);
+        }
+    };
+
+    const goToPreviousSentence = () => {
+        const localSentences = GRAMMAR_SENTENCES || [];
+        const newIndex = sentenceArrayIndex === 0 ? localSentences.length - 1 : sentenceArrayIndex - 1;
+        setSentenceArrayIndex(newIndex);
+        loadSentenceByIndex(newIndex);
+        setUserTranslation('');
+        if (currentIndex > 1) {
+            setCurrentIndex(currentIndex - 1);
+        }
+    };
+
+    const loadSentenceByIndex = (index: number) => {
+        const localSentences = GRAMMAR_SENTENCES || [];
+        if (localSentences.length > 0) {
+            const sentence = localSentences[index];
+            setCurrentSentence({
+                id: sentence.id,
+                phrase_originale: sentence.french,
+                langue_source: 'Français',
+                langue_cible: 'Anglais',
+                theme_grammatical: sentence.theme,
+                niveau: sentence.difficulty_level.charAt(0).toUpperCase() + sentence.difficulty_level.slice(1),
+            });
+        }
+    };
 
     useEffect(() => {
         loadRandomSentence();
@@ -160,19 +275,11 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
     };
 
     const handlePrevious = () => {
-        if (currentIndex > 1) {
-            setCurrentIndex(currentIndex - 1);
-            setUserTranslation('');
-            loadRandomSentence();
-        }
+        goToPreviousSentence();
     };
 
     const handleNext = () => {
-        if (currentIndex < totalSentences) {
-            setCurrentIndex(currentIndex + 1);
-            setUserTranslation('');
-            loadRandomSentence();
-        }
+        goToNextSentence();
     };
 
     if (loading) {
@@ -231,25 +338,41 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
                     </View>
                 )}
 
-                {/* Phrase to Translate Card */}
+                {/* Phrase to Translate Card - Swipeable */}
                 {currentSentence && (
                     <View style={styles.section}>
-                        <Card style={styles.phraseCard}>
-                            <View style={styles.phraseHeader}>
-                                <View style={styles.phraseLabel}>
-                                    <Text style={styles.phraseLabelText}>PHRASE À TRADUIRE</Text>
-                                </View>
-                                <View style={styles.badges}>
-                                    <View style={styles.badge}>
-                                        <Text style={styles.badgeText}>Spécialisé</Text>
+                        <Animated.View
+                            {...panResponder.panHandlers}
+                            style={[
+                                styles.swipeContainer,
+                                {
+                                    transform: [{ translateX: swipeAnim }],
+                                    opacity: opacityAnim,
+                                },
+                            ]}
+                        >
+                            <Card style={styles.phraseCard}>
+                                <View style={styles.phraseHeader}>
+                                    <View style={styles.phraseLabel}>
+                                        <Text style={styles.phraseLabelText}>PHRASE À TRADUIRE</Text>
                                     </View>
-                                    <View style={[styles.badge, styles.badgeAdvanced]}>
-                                        <Text style={styles.badgeText}>Avancé</Text>
+                                    <View style={styles.badges}>
+                                        <View style={styles.badge}>
+                                            <Text style={styles.badgeText}>Spécialisé</Text>
+                                        </View>
+                                        <View style={[styles.badge, styles.badgeAdvanced]}>
+                                            <Text style={styles.badgeText}>Avancé</Text>
+                                        </View>
                                     </View>
                                 </View>
-                            </View>
-                            <Text style={styles.phraseText}>{currentSentence.phrase_originale}</Text>
-                        </Card>
+                                <Text style={styles.phraseText}>{currentSentence.phrase_originale}</Text>
+
+                                {/* Swipe hint */}
+                                <View style={styles.swipeHint}>
+                                    <Text style={styles.swipeHintText}>← Swipez pour changer de phrase →</Text>
+                                </View>
+                            </Card>
+                        </Animated.View>
                     </View>
                 )}
 
@@ -303,11 +426,6 @@ export const TranslationScreen: React.FC<TranslationScreenProps> = ({ navigation
                         </TouchableOpacity>
                     </Card>
                 </View>
-
-                {/* Keyboard Hint */}
-                <Text style={styles.keyboardHint}>
-                    Utilisez les flèches ← → du clavier pour naviguer
-                </Text>
             </ScrollView>
 
             {/* Sentence Selection Modal */}
@@ -629,5 +747,20 @@ const styles = StyleSheet.create({
     separator: {
         height: 1,
         backgroundColor: COLORS.border.light,
+    },
+    swipeContainer: {
+        width: '100%',
+    },
+    swipeHint: {
+        marginTop: SPACING.md,
+        paddingTop: SPACING.sm,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border.light,
+        alignItems: 'center',
+    },
+    swipeHintText: {
+        fontSize: FONT_SIZES.xs,
+        color: COLORS.text.light,
+        fontStyle: 'italic',
     },
 });

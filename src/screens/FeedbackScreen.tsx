@@ -146,7 +146,10 @@ export const FeedbackScreen: React.FC<FeedbackScreenProps> = ({ navigation, rout
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView style={styles.scrollView}>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+            >
                 {/* Header */}
                 <View style={styles.header}>
                     <Text style={styles.title}>Resultat de l'analyse</Text>
@@ -289,10 +292,6 @@ const styles = StyleSheet.create({
         color: COLORS.secondary,
         textAlign: 'center',
     },
-    scrollContent: {
-        padding: SPACING.lg,
-        paddingBottom: SPACING.xxl,
-    },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -347,11 +346,12 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 1.5,
         marginBottom: SPACING.sm,
-        marginLeft: 4,
+        paddingHorizontal: SPACING.xs,
     },
     comparisonCard: {
-        padding: 0,
+        padding: SPACING.lg,
         overflow: 'hidden',
+        marginHorizontal: 0,
     },
     comparisonRow: {
         padding: SPACING.md,
@@ -392,7 +392,8 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.border.light,
     },
     analysisCard: {
-        padding: SPACING.md,
+        padding: SPACING.lg,
+        marginHorizontal: 0,
     },
     grammarContainer: {
         gap: SPACING.lg,
@@ -442,6 +443,7 @@ const styles = StyleSheet.create({
     },
     actions: {
         gap: SPACING.md,
+        paddingTop: SPACING.md,
     },
     mainButton: {
         backgroundColor: COLORS.secondary,
@@ -451,6 +453,11 @@ const styles = StyleSheet.create({
     },
     scrollView: {
         flex: 1,
+    },
+    scrollContent: {
+        paddingHorizontal: SPACING.lg,
+        paddingBottom: SPACING.xxl,
+        paddingTop: SPACING.md,
     },
     title: {
         fontSize: FONT_SIZES.xl,

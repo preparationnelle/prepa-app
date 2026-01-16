@@ -1,18 +1,48 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '../config/theme';
-
 import { GRAMMAR_SENTENCES } from '../data/grammarSentences';
 
 interface HomeScreenProps {
     navigation: any;
 }
 
+interface Feature {
+    title: string;
+    description: string;
+    color: string;
+}
+
+const FEATURES: Feature[] = [
+    {
+        title: 'Traduction Interactive',
+        description: 'Traduisez des phrases et recevez un feedback immediat sur votre grammaire',
+        color: '#FF6A00',
+    },
+    {
+        title: 'Suivi de Progression',
+        description: 'Visualisez vos progres et identifiez vos axes d\'amelioration',
+        color: '#34C759',
+    },
+    {
+        title: 'Lecons de Grammaire',
+        description: 'Accedez a des lecons completes pour renforcer vos connaissances',
+        color: '#007AFF',
+    },
+    {
+        title: 'Mode Test',
+        description: 'Testez vos competences avec des series de phrases chronometrees',
+        color: '#5856D6',
+    },
+];
+
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     const [translation, setTranslation] = useState('');
+    const [showFeatures, setShowFeatures] = useState(false);
+    const [showAnswer, setShowAnswer] = useState(false);
 
     // Use the first sentence for the demo
     const demoSentence = GRAMMAR_SENTENCES[0];
@@ -26,8 +56,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         navigation.navigate('Feedback', {
             sentence: demoSentence,
             userTranslation: translation,
-            translationId: null // No ID for demo mode
+            translationId: null
         });
+    };
+
+    const handleShowAnswer = () => {
+        setShowAnswer(true);
+    };
+
+    const handleHideAnswer = () => {
+        setShowAnswer(false);
     };
 
     return (
@@ -47,13 +85,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                     <Card style={styles.demoCard}>
                         <Text style={styles.demoTitle}>Essayez maintenant !</Text>
                         <Text style={styles.demoLabel}>Phrase a traduire</Text>
-                        <View style={styles.sentenceBox}>
-                            <View style={styles.sentenceQuote}>
-                                <Text style={styles.quoteIcon}>"</Text>
+                        <View style={styles.sentenceContainer}>
+                            {/* Left arrow indicator */}
+                            <View style={styles.swipeIndicator}>
+                                <Text style={styles.swipeArrow}>‹</Text>
                             </View>
-                            <Text style={styles.sentenceText}>
-                                {demoSentence.french}
-                            </Text>
+
+                            <View style={styles.sentenceBox}>
+                                <View style={styles.sentenceQuote}>
+                                    <Text style={styles.quoteIcon}>"</Text>
+                                </View>
+                                <Text style={styles.sentenceText}>
+                                    {demoSentence.french}
+                                </Text>
+                            </View>
+
+                            {/* Right arrow indicator */}
+                            <View style={styles.swipeIndicator}>
+                                <Text style={styles.swipeArrow}>›</Text>
+                            </View>
                         </View>
                         <Text style={styles.demoLabel}>Votre traduction :</Text>
                         <TextInput
@@ -64,79 +114,106 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                             onChangeText={setTranslation}
                             multiline
                         />
-                        <Button
-                            title="Vérifier ma traduction"
-                            onPress={handleVerify}
-                            variant="primary"
-                            style={styles.demoButton}
-                        />
+
+                        {/* Answer Box - shows when user clicks 'Voir la réponse' */}
+                        {showAnswer && (
+                            <View style={styles.answerBox}>
+                                <Text style={styles.answerLabel}>Réponse correcte :</Text>
+                                <Text style={styles.answerText}>{demoSentence.reference}</Text>
+                                <TouchableOpacity
+                                    style={styles.hideAnswerButton}
+                                    onPress={handleHideAnswer}
+                                >
+                                    <Text style={styles.hideAnswerText}>Masquer</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        {/* Two Buttons */}
+                        <View style={styles.buttonRow}>
+                            <TouchableOpacity
+                                style={styles.secondaryButton}
+                                onPress={handleShowAnswer}
+                            >
+                                <Text style={styles.secondaryButtonText}>Voir la réponse</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.primaryButton, !translation.trim() && styles.primaryButtonDisabled]}
+                                onPress={handleVerify}
+                                disabled={!translation.trim()}
+                            >
+                                <Text style={styles.primaryButtonText}>Analyser ma phrase</Text>
+                            </TouchableOpacity>
+                        </View>
                     </Card>
                 </View>
 
-                {/* Features */}
-                <View style={styles.features}>
-                    <Text style={styles.featuresTitle}>Fonctionnalites</Text>
-
-                    <Card style={styles.featureCard}>
-                        <View style={styles.featureHeader}>
-                            <View style={[styles.featureIndicator, { backgroundColor: '#FF6A00' }]} />
-                            <Text style={styles.featureTitle}>Traduction Interactive</Text>
-                        </View>
-                        <Text style={styles.featureText}>
-                            Traduisez des phrases et recevez un feedback immediat sur votre grammaire
-                        </Text>
-                    </Card>
-
-                    <Card style={styles.featureCard}>
-                        <View style={styles.featureHeader}>
-                            <View style={[styles.featureIndicator, { backgroundColor: '#34C759' }]} />
-                            <Text style={styles.featureTitle}>Suivi de Progression</Text>
-                        </View>
-                        <Text style={styles.featureText}>
-                            Visualisez vos progres et identifiez vos axes d'amelioration
-                        </Text>
-                    </Card>
-
-                    <Card style={styles.featureCard}>
-                        <View style={styles.featureHeader}>
-                            <View style={[styles.featureIndicator, { backgroundColor: '#007AFF' }]} />
-                            <Text style={styles.featureTitle}>Lecons de Grammaire</Text>
-                        </View>
-                        <Text style={styles.featureText}>
-                            Accedez a des lecons completes pour renforcer vos connaissances
-                        </Text>
-                    </Card>
-
-                    <Card style={styles.featureCard}>
-                        <View style={styles.featureHeader}>
-                            <View style={[styles.featureIndicator, { backgroundColor: '#5856D6' }]} />
-                            <Text style={styles.featureTitle}>Mode Test</Text>
-                        </View>
-                        <Text style={styles.featureText}>
-                            Testez vos competences avec des series de phrases chronometrees
-                        </Text>
-                    </Card>
-                </View>
-
-                {/* Call to Action */}
-                <View style={styles.ctaContainer}>
-                    <Button
-                        title="Explorer la banque de phrases"
-                        onPress={() => navigation.navigate('SentencesList')}
-                        variant="outline"
-                        style={styles.ctaButton}
-                    />
-                </View>
-
-
-
-                {/* Footer */}
-                <View style={styles.footer}>
-                    <Text style={styles.footerText}>
-                        Développé pour les étudiants en prépa
-                    </Text>
+                {/* Features Button */}
+                <View style={styles.featuresButtonContainer}>
+                    <TouchableOpacity
+                        style={styles.featuresButton}
+                        onPress={() => setShowFeatures(true)}
+                    >
+                        <Text style={styles.featuresButtonText}>Fonctionnalités supplémentaires</Text>
+                        <Text style={styles.featuresButtonArrow}>→</Text>
+                    </TouchableOpacity>
                 </View>
             </ScrollView>
+
+            {/* Features Modal */}
+            <Modal
+                visible={showFeatures}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setShowFeatures(false)}
+            >
+                <SafeAreaView style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Fonctionnalités</Text>
+                            <TouchableOpacity
+                                onPress={() => setShowFeatures(false)}
+                                style={styles.closeButton}
+                            >
+                                <Text style={styles.closeButtonText}>✕</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView style={styles.featuresList}>
+                            {FEATURES.map((feature, index) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    style={styles.featureCard}
+                                    onPress={() => {
+                                        setShowFeatures(false);
+                                        // Navigate based on feature
+                                        if (feature.title === 'Traduction Interactive') {
+                                            navigation.navigate('Translation');
+                                        }
+                                        // Add other navigation routes as needed
+                                    }}
+                                >
+                                    <View style={styles.featureHeader}>
+                                        <View style={[styles.featureIndicator, { backgroundColor: feature.color }]} />
+                                        <Text style={styles.featureTitle}>{feature.title}</Text>
+                                    </View>
+                                    <Text style={styles.featureText}>{feature.description}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+
+                        <TouchableOpacity
+                            style={styles.exploreButton}
+                            onPress={() => {
+                                setShowFeatures(false);
+                                navigation.navigate('Translation');
+                            }}
+                        >
+                            <Text style={styles.exploreButtonText}>Explorer la banque de phrases</Text>
+                        </TouchableOpacity>
+                    </View>
+                </SafeAreaView>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -152,98 +229,49 @@ const styles = StyleSheet.create({
     hero: {
         alignItems: 'center',
         paddingHorizontal: SPACING.lg,
-        paddingTop: SPACING.xxl,
-        paddingBottom: SPACING.xl,
+        paddingTop: SPACING.lg,
+        paddingBottom: SPACING.md,
     },
     logoContainer: {
-        width: 100,
-        height: 100,
-        borderRadius: BORDER_RADIUS.full,
+        width: 90,
+        height: 90,
+        borderRadius: 45,
         backgroundColor: COLORS.primary,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: SPACING.lg,
+        marginBottom: SPACING.md,
+        // Premium shadow effect
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.35,
+        shadowRadius: 16,
+        elevation: 12,
     },
     logoText: {
-        fontSize: 32,
+        fontSize: 38,
         fontWeight: '800',
         color: COLORS.white,
+        letterSpacing: 1,
     },
     title: {
-        fontSize: FONT_SIZES.xxxl,
+        fontSize: 32,
         fontWeight: '800',
         color: COLORS.secondary,
         textAlign: 'center',
         marginBottom: SPACING.xs,
+        letterSpacing: -0.5,
     },
     subtitle: {
-        fontSize: FONT_SIZES.xl,
-        fontWeight: '600',
+        fontSize: FONT_SIZES.lg,
+        fontWeight: '700',
         color: COLORS.primary,
         textAlign: 'center',
-        marginBottom: SPACING.lg,
-    },
-    description: {
-        fontSize: FONT_SIZES.md,
-        color: COLORS.text.secondary,
-        textAlign: 'center',
-        lineHeight: 24,
-        maxWidth: 400,
-    },
-    features: {
-        paddingHorizontal: SPACING.lg,
-        marginBottom: SPACING.xl,
-    },
-    featuresTitle: {
-        fontSize: FONT_SIZES.xl,
-        fontWeight: '700',
-        color: COLORS.text.primary,
-        marginBottom: SPACING.md,
-    },
-    featureCard: {
-        marginBottom: SPACING.sm,
-    },
-    featureHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: SPACING.sm,
-    },
-    featureIndicator: {
-        width: 4,
-        height: 24,
-        borderRadius: 2,
-        marginRight: SPACING.sm,
-    },
-    featureTitle: {
-        fontSize: FONT_SIZES.md,
-        fontWeight: '600',
-        color: COLORS.text.primary,
-    },
-    featureText: {
-        fontSize: FONT_SIZES.sm,
-        color: COLORS.text.secondary,
-        lineHeight: 20,
-        paddingLeft: SPACING.md + 4,
-    },
-    ctaContainer: {
-        paddingHorizontal: SPACING.lg,
-        marginBottom: SPACING.xl,
-    },
-    ctaButton: {
-        marginBottom: SPACING.md,
-    },
-    footer: {
-        alignItems: 'center',
-        paddingHorizontal: SPACING.lg,
-    },
-    footerText: {
-        fontSize: FONT_SIZES.sm,
-        color: COLORS.text.light,
-        textAlign: 'center',
+        letterSpacing: 1,
+        textTransform: 'uppercase',
     },
     demoSection: {
         paddingHorizontal: SPACING.lg,
-        marginBottom: SPACING.xl,
+        marginBottom: SPACING.lg,
     },
     demoCard: {
         padding: SPACING.lg,
@@ -261,11 +289,27 @@ const styles = StyleSheet.create({
         color: COLORS.secondary,
         marginBottom: SPACING.sm,
     },
+    sentenceContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: SPACING.lg,
+    },
+    swipeIndicator: {
+        width: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    swipeArrow: {
+        fontSize: 28,
+        color: COLORS.primary,
+        opacity: 0.5,
+        fontWeight: '300',
+    },
     sentenceBox: {
+        flex: 1,
         backgroundColor: COLORS.white,
         padding: SPACING.lg,
         borderRadius: BORDER_RADIUS.lg,
-        marginBottom: SPACING.lg,
         borderWidth: 1,
         borderColor: COLORS.border.light,
         shadowColor: '#000',
@@ -311,12 +355,169 @@ const styles = StyleSheet.create({
         marginBottom: SPACING.lg,
     },
     demoButton: {
-        marginBottom: SPACING.md,
+        marginBottom: 0,
     },
-    demoHint: {
+    featuresButtonContainer: {
+        paddingHorizontal: SPACING.lg,
+    },
+    featuresButton: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: COLORS.white,
+        paddingVertical: SPACING.lg,
+        paddingHorizontal: SPACING.lg,
+        borderRadius: BORDER_RADIUS.lg,
+        borderWidth: 1,
+        borderColor: COLORS.border.light,
+    },
+    featuresButtonText: {
+        fontSize: FONT_SIZES.md,
+        fontWeight: '600',
+        color: COLORS.secondary,
+    },
+    featuresButtonArrow: {
+        fontSize: FONT_SIZES.lg,
+        color: COLORS.primary,
+        fontWeight: '700',
+    },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: COLORS.background,
+        borderTopLeftRadius: BORDER_RADIUS.xl,
+        borderTopRightRadius: BORDER_RADIUS.xl,
+        height: '70%',
+        padding: SPACING.lg,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: SPACING.lg,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border.light,
+        paddingBottom: SPACING.md,
+    },
+    modalTitle: {
+        fontSize: FONT_SIZES.xl,
+        fontWeight: '700',
+        color: COLORS.secondary,
+    },
+    closeButton: {
+        padding: SPACING.sm,
+    },
+    closeButtonText: {
+        fontSize: FONT_SIZES.lg,
+        color: COLORS.text.secondary,
+    },
+    featuresList: {
+        flex: 1,
+    },
+    featureCard: {
+        backgroundColor: COLORS.white,
+        padding: SPACING.lg,
+        borderRadius: BORDER_RADIUS.lg,
+        marginBottom: SPACING.md,
+        borderWidth: 1,
+        borderColor: COLORS.border.light,
+    },
+    featureHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: SPACING.sm,
+    },
+    featureIndicator: {
+        width: 4,
+        height: 24,
+        borderRadius: 2,
+        marginRight: SPACING.sm,
+    },
+    featureTitle: {
+        fontSize: FONT_SIZES.md,
+        fontWeight: '600',
+        color: COLORS.text.primary,
+    },
+    featureText: {
         fontSize: FONT_SIZES.sm,
         color: COLORS.text.secondary,
-        textAlign: 'center',
-        fontStyle: 'italic',
+        lineHeight: 20,
+        paddingLeft: SPACING.md + 4,
+    },
+    exploreButton: {
+        backgroundColor: COLORS.primary,
+        paddingVertical: SPACING.md,
+        borderRadius: BORDER_RADIUS.lg,
+        alignItems: 'center',
+        marginTop: SPACING.md,
+    },
+    exploreButtonText: {
+        fontSize: FONT_SIZES.md,
+        fontWeight: '600',
+        color: COLORS.white,
+    },
+    answerBox: {
+        backgroundColor: '#E8F5E9',
+        padding: SPACING.lg,
+        borderRadius: BORDER_RADIUS.lg,
+        marginBottom: SPACING.lg,
+        borderWidth: 1,
+        borderColor: '#4CAF50',
+    },
+    answerLabel: {
+        fontSize: FONT_SIZES.sm,
+        fontWeight: '700',
+        color: '#2E7D32',
+        marginBottom: SPACING.sm,
+        textTransform: 'uppercase',
+    },
+    answerText: {
+        fontSize: FONT_SIZES.md,
+        color: COLORS.text.primary,
+        lineHeight: 24,
+        fontWeight: '500',
+    },
+    hideAnswerButton: {
+        marginTop: SPACING.md,
+        alignSelf: 'flex-end',
+    },
+    hideAnswerText: {
+        fontSize: FONT_SIZES.sm,
+        color: '#2E7D32',
+        fontWeight: '600',
+    },
+    buttonRow: {
+        flexDirection: 'column',
+        gap: SPACING.md,
+    },
+    secondaryButton: {
+        backgroundColor: COLORS.white,
+        paddingVertical: SPACING.md,
+        borderRadius: BORDER_RADIUS.lg,
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: COLORS.primary,
+    },
+    secondaryButtonText: {
+        fontSize: FONT_SIZES.md,
+        fontWeight: '600',
+        color: COLORS.primary,
+    },
+    primaryButton: {
+        backgroundColor: COLORS.primary,
+        paddingVertical: SPACING.md,
+        borderRadius: BORDER_RADIUS.lg,
+        alignItems: 'center',
+    },
+    primaryButtonDisabled: {
+        opacity: 0.5,
+    },
+    primaryButtonText: {
+        fontSize: FONT_SIZES.md,
+        fontWeight: '600',
+        color: COLORS.white,
     },
 });
