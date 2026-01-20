@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Modal } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Modal, Dimensions, NativeSyntheticEvent, NativeScrollEvent, FlatList, ListRenderItem } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '../config/theme';
 import { GRAMMAR_SENTENCES } from '../data/grammarSentences';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_MARGIN = SPACING.md;
+const SENTENCE_CARD_WIDTH = SCREEN_WIDTH - SPACING.lg * 2; // Card takes full width of demoCard minus padding
 
 interface HomeScreenProps {
     navigation: any;
@@ -39,13 +43,29 @@ const FEATURES: Feature[] = [
     },
 ];
 
+// All sentences are available in the carousel
+const DEMO_SENTENCES = GRAMMAR_SENTENCES;
+
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     const [translation, setTranslation] = useState('');
     const [showFeatures, setShowFeatures] = useState(false);
     const [showAnswer, setShowAnswer] = useState(false);
+    const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
+    const sentenceScrollRef = useRef<FlatList>(null);
 
-    // Use the first sentence for the demo
-    const demoSentence = GRAMMAR_SENTENCES[0];
+    // Get current sentence
+    const currentSentence = DEMO_SENTENCES[currentSentenceIndex];
+
+    // Handle scroll event to update current index
+    const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+        const contentOffsetX = event.nativeEvent.contentOffset.x;
+        const newIndex = Math.round(contentOffsetX / SENTENCE_CARD_WIDTH);
+        if (newIndex !== currentSentenceIndex && newIndex >= 0 && newIndex < DEMO_SENTENCES.length) {
+            setCurrentSentenceIndex(newIndex);
+            setTranslation(''); // Reset translation when changing sentence
+            setShowAnswer(false); // Hide answer when changing sentence
+        }
+    };
 
     const handleVerify = () => {
         if (!translation.trim()) {
@@ -54,7 +74,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         }
 
         navigation.navigate('Feedback', {
-            sentence: demoSentence,
+            sentence: currentSentence,
             userTranslation: translation,
             translationId: null
         });
@@ -84,26 +104,63 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 <View style={styles.demoSection}>
                     <Card style={styles.demoCard}>
                         <Text style={styles.demoTitle}>Essayez maintenant !</Text>
-                        <Text style={styles.demoLabel}>Phrase a traduire</Text>
-                        <View style={styles.sentenceContainer}>
-                            {/* Left arrow indicator */}
-                            <View style={styles.swipeIndicator}>
-                                <Text style={styles.swipeArrow}>‹</Text>
-                            </View>
+                        <Text style={styles.demoLabel}>Phrase à traduire</Text>
 
-                            <View style={styles.sentenceBox}>
-                                <View style={styles.sentenceQuote}>
-                                    <Text style={styles.quoteIcon}>"</Text>
+                        {/* Swipeable Sentence Container */}
+                        <View style={styles.sentenceCarouselContainer}>
+                            <FlatList
+                                ref={sentenceScrollRef as any}
+                                data={DEMO_SENTENCES}
+                                horizontal
+                                pagingEnabled
+                                showsHorizontalScrollIndicator={false}
+                                onScroll={handleScroll}
+                                onMomentumScrollEnd={handleScroll}
+                                scrollEventThrottle={16}
+                                decelerationRate="fast"
+                                keyExtractor={(item) => item.id}
+                                getItemLayout={(_, index) => ({
+                                    length: SENTENCE_CARD_WIDTH,
+                                    offset: SENTENCE_CARD_WIDTH * index,
+                                    index,
+                                })}
+                                renderItem={({ item: sentence }) => (
+                                    <View style={[styles.sentenceBox, { width: SENTENCE_CARD_WIDTH }]}>
+                                        <View style={styles.sentenceQuote}>
+                                            <Text style={styles.quoteIcon}>"</Text>
+                                        </View>
+                                        <Text style={styles.sentenceText}>
+                                            {sentence.french}
+                                        </Text>
+                                        <View style={styles.sentenceMetaContainer}>
+                                            <Text style={styles.sentenceMeta}>{sentence.category}</Text>
+                                            <View style={styles.difficultyBadge}>
+                                                <Text style={styles.difficultyText}>
+                                                    {sentence.difficulty_level === 'advanced' ? 'Avancé' :
+                                                        sentence.difficulty_level === 'intermediate' ? 'Intermédiaire' : 'Débutant'}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                )}
+                            />
+
+                            {/* Progress Bar */}
+                            <View style={styles.progressContainer}>
+                                <View style={styles.progressBar}>
+                                    <View
+                                        style={[
+                                            styles.progressFill,
+                                            { width: `${((currentSentenceIndex + 1) / DEMO_SENTENCES.length) * 100}%` }
+                                        ]}
+                                    />
                                 </View>
-                                <Text style={styles.sentenceText}>
-                                    {demoSentence.french}
-                                </Text>
                             </View>
 
-                            {/* Right arrow indicator */}
-                            <View style={styles.swipeIndicator}>
-                                <Text style={styles.swipeArrow}>›</Text>
-                            </View>
+                            {/* Sentence Counter */}
+                            <Text style={styles.sentenceCounter}>
+                                {currentSentenceIndex + 1} / {DEMO_SENTENCES.length} phrases
+                            </Text>
                         </View>
                         <Text style={styles.demoLabel}>Votre traduction :</Text>
                         <TextInput
@@ -119,7 +176,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                         {showAnswer && (
                             <View style={styles.answerBox}>
                                 <Text style={styles.answerLabel}>Réponse correcte :</Text>
-                                <Text style={styles.answerText}>{demoSentence.reference}</Text>
+                                <Text style={styles.answerText}>{currentSentence.reference}</Text>
                                 <TouchableOpacity
                                     style={styles.hideAnswerButton}
                                     onPress={handleHideAnswer}
@@ -289,26 +346,16 @@ const styles = StyleSheet.create({
         color: COLORS.secondary,
         marginBottom: SPACING.sm,
     },
-    sentenceContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    sentenceCarouselContainer: {
         marginBottom: SPACING.lg,
     },
-    swipeIndicator: {
-        width: 24,
+    sentenceScrollContent: {
         alignItems: 'center',
-        justifyContent: 'center',
-    },
-    swipeArrow: {
-        fontSize: 28,
-        color: COLORS.primary,
-        opacity: 0.5,
-        fontWeight: '300',
     },
     sentenceBox: {
-        flex: 1,
         backgroundColor: COLORS.white,
         padding: SPACING.lg,
+        paddingTop: SPACING.xl,
         borderRadius: BORDER_RADIUS.lg,
         borderWidth: 1,
         borderColor: COLORS.border.light,
@@ -317,6 +364,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.08,
         shadowRadius: 12,
         elevation: 4,
+        minHeight: 140,
     },
     sentenceQuote: {
         position: 'absolute',
@@ -341,6 +389,53 @@ const styles = StyleSheet.create({
         color: COLORS.text.primary,
         lineHeight: 28,
         marginTop: SPACING.sm,
+    },
+    sentenceMetaContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: SPACING.md,
+        paddingTop: SPACING.sm,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border.light,
+    },
+    sentenceMeta: {
+        fontSize: FONT_SIZES.sm,
+        color: COLORS.text.secondary,
+        fontWeight: '500',
+    },
+    difficultyBadge: {
+        backgroundColor: COLORS.primary + '15',
+        paddingHorizontal: SPACING.sm,
+        paddingVertical: 4,
+        borderRadius: BORDER_RADIUS.sm,
+    },
+    difficultyText: {
+        fontSize: FONT_SIZES.xs,
+        color: COLORS.primary,
+        fontWeight: '600',
+    },
+    progressContainer: {
+        marginTop: SPACING.md,
+        paddingHorizontal: SPACING.sm,
+    },
+    progressBar: {
+        height: 6,
+        backgroundColor: COLORS.gray.light,
+        borderRadius: 3,
+        overflow: 'hidden',
+    },
+    progressFill: {
+        height: '100%',
+        backgroundColor: COLORS.primary,
+        borderRadius: 3,
+    },
+    sentenceCounter: {
+        textAlign: 'center',
+        fontSize: FONT_SIZES.sm,
+        color: COLORS.text.secondary,
+        marginTop: SPACING.sm,
+        fontWeight: '500',
     },
     input: {
         backgroundColor: COLORS.white,
