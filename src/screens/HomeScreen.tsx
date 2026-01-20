@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Modal, Dimensions, NativeSyntheticEvent, NativeScrollEvent, FlatList, ListRenderItem } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Modal, Dimensions, NativeSyntheticEvent, NativeScrollEvent, FlatList, ListRenderItem, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/common/Button';
 import { Card } from '../components/common/Card';
@@ -12,6 +12,11 @@ const SENTENCE_CARD_WIDTH = SCREEN_WIDTH - SPACING.lg * 2; // Card takes full wi
 
 interface HomeScreenProps {
     navigation: any;
+    route?: {
+        params?: {
+            initialSentenceIndex?: number;
+        };
+    };
 }
 
 interface Feature {
@@ -46,12 +51,27 @@ const FEATURES: Feature[] = [
 // All sentences are available in the carousel
 const DEMO_SENTENCES = GRAMMAR_SENTENCES;
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation, route }) => {
+    const initialIndex = route?.params?.initialSentenceIndex ?? 0;
     const [translation, setTranslation] = useState('');
     const [showFeatures, setShowFeatures] = useState(false);
     const [showAnswer, setShowAnswer] = useState(false);
-    const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0);
+    const [currentSentenceIndex, setCurrentSentenceIndex] = useState(initialIndex);
     const sentenceScrollRef = useRef<FlatList>(null);
+
+    // Update index when navigating back from FeedbackScreen with a new sentence
+    useEffect(() => {
+        if (route?.params?.initialSentenceIndex !== undefined) {
+            const newIndex = route.params.initialSentenceIndex;
+            setCurrentSentenceIndex(newIndex);
+            setTranslation('');
+            setShowAnswer(false);
+            // Scroll to the new sentence after a short delay to ensure FlatList is ready
+            setTimeout(() => {
+                sentenceScrollRef.current?.scrollToIndex({ index: newIndex, animated: false });
+            }, 100);
+        }
+    }, [route?.params?.initialSentenceIndex]);
 
     // Get current sentence
     const currentSentence = DEMO_SENTENCES[currentSentenceIndex];
@@ -88,134 +108,169 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         setShowAnswer(false);
     };
 
+    // Navigate to next sentence
+    const goToNextSentence = () => {
+        if (currentSentenceIndex < DEMO_SENTENCES.length - 1) {
+            const nextIndex = currentSentenceIndex + 1;
+            setCurrentSentenceIndex(nextIndex);
+            setTranslation('');
+            setShowAnswer(false);
+            sentenceScrollRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+        }
+    };
+
+    // Navigate to previous sentence
+    const goToPreviousSentence = () => {
+        if (currentSentenceIndex > 0) {
+            const prevIndex = currentSentenceIndex - 1;
+            setCurrentSentenceIndex(prevIndex);
+            setTranslation('');
+            setShowAnswer(false);
+            sentenceScrollRef.current?.scrollToIndex({ index: prevIndex, animated: true });
+        }
+    };
+
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* Hero Section */}
-                <View style={styles.hero}>
-                    <View style={styles.logoContainer}>
-                        <Text style={styles.logoText}>PR</Text>
+            <KeyboardAvoidingView
+                style={styles.keyboardAvoid}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+            >
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* Hero Section */}
+                    <View style={styles.hero}>
+                        <View style={styles.logoContainer}>
+                            <Text style={styles.logoText}>PR</Text>
+                        </View>
+                        <Text style={styles.title}>Prepa Rationnelle</Text>
+                        <Text style={styles.subtitle}>Translations</Text>
                     </View>
-                    <Text style={styles.title}>Prepa Rationnelle</Text>
-                    <Text style={styles.subtitle}>Translations</Text>
-                </View>
 
-                {/* Interactive Demo Section */}
-                <View style={styles.demoSection}>
-                    <Card style={styles.demoCard}>
-                        <Text style={styles.demoTitle}>Essayez maintenant !</Text>
-                        <Text style={styles.demoLabel}>Phrase à traduire</Text>
+                    {/* Interactive Demo Section */}
+                    <View style={styles.demoSection}>
+                        <View style={styles.demoContent}>
+                            <Text style={styles.demoLabel}>Phrase à traduire</Text>
 
-                        {/* Swipeable Sentence Container */}
-                        <View style={styles.sentenceCarouselContainer}>
-                            <FlatList
-                                ref={sentenceScrollRef as any}
-                                data={DEMO_SENTENCES}
-                                horizontal
-                                pagingEnabled
-                                showsHorizontalScrollIndicator={false}
-                                onScroll={handleScroll}
-                                onMomentumScrollEnd={handleScroll}
-                                scrollEventThrottle={16}
-                                decelerationRate="fast"
-                                keyExtractor={(item) => item.id}
-                                getItemLayout={(_, index) => ({
-                                    length: SENTENCE_CARD_WIDTH,
-                                    offset: SENTENCE_CARD_WIDTH * index,
-                                    index,
-                                })}
-                                renderItem={({ item: sentence }) => (
-                                    <View style={[styles.sentenceBox, { width: SENTENCE_CARD_WIDTH }]}>
-                                        <View style={styles.sentenceQuote}>
-                                            <Text style={styles.quoteIcon}>"</Text>
-                                        </View>
-                                        <Text style={styles.sentenceText}>
-                                            {sentence.french}
-                                        </Text>
-                                        <View style={styles.sentenceMetaContainer}>
-                                            <Text style={styles.sentenceMeta}>{sentence.category}</Text>
-                                            <View style={styles.difficultyBadge}>
-                                                <Text style={styles.difficultyText}>
-                                                    {sentence.difficulty_level === 'advanced' ? 'Avancé' :
-                                                        sentence.difficulty_level === 'intermediate' ? 'Intermédiaire' : 'Débutant'}
-                                                </Text>
+                            {/* Swipeable Sentence Container */}
+                            <View style={styles.sentenceCarouselContainer}>
+                                <FlatList
+                                    ref={sentenceScrollRef as any}
+                                    data={DEMO_SENTENCES}
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    onScroll={handleScroll}
+                                    onMomentumScrollEnd={handleScroll}
+                                    scrollEventThrottle={16}
+                                    decelerationRate="fast"
+                                    snapToInterval={SENTENCE_CARD_WIDTH}
+                                    snapToAlignment="center"
+                                    contentContainerStyle={styles.sentenceScrollContent}
+                                    keyExtractor={(item) => item.id}
+                                    getItemLayout={(_, index) => ({
+                                        length: SENTENCE_CARD_WIDTH,
+                                        offset: SENTENCE_CARD_WIDTH * index,
+                                        index,
+                                    })}
+                                    renderItem={({ item: sentence }) => (
+                                        <View style={[styles.sentenceBox, { width: SENTENCE_CARD_WIDTH }]}>
+                                            <View style={styles.sentenceHeader}>
+                                                <View style={styles.sentenceQuote}>
+                                                    <Text style={styles.quoteIcon}>"</Text>
+                                                </View>
+                                                <View style={styles.sentenceMetaContainer}>
+                                                    <Text style={styles.sentenceMeta}>{sentence.category}</Text>
+                                                    <View style={styles.difficultyBadge}>
+                                                        <Text style={styles.difficultyText}>
+                                                            {sentence.difficulty_level === 'advanced' ? 'Avancé' :
+                                                                sentence.difficulty_level === 'intermediate' ? 'Intermédiaire' : 'Débutant'}
+                                                        </Text>
+                                                    </View>
+                                                </View>
                                             </View>
+                                            <Text style={styles.sentenceText}>
+                                                {sentence.french}
+                                            </Text>
                                         </View>
-                                    </View>
-                                )}
-                            />
+                                    )}
+                                />
 
-                            {/* Progress Bar */}
-                            <View style={styles.progressContainer}>
-                                <View style={styles.progressBar}>
-                                    <View
-                                        style={[
-                                            styles.progressFill,
-                                            { width: `${((currentSentenceIndex + 1) / DEMO_SENTENCES.length) * 100}%` }
-                                        ]}
-                                    />
+                                {/* Progress Bar */}
+                                <View style={styles.navigationContainer}>
+                                    <View style={styles.progressBarWrapper}>
+                                        <View style={styles.progressBar}>
+                                            <View
+                                                style={[
+                                                    styles.progressFill,
+                                                    { width: `${((currentSentenceIndex + 1) / DEMO_SENTENCES.length) * 100}%` }
+                                                ]}
+                                            />
+                                        </View>
+                                        <Text style={styles.sentenceCounter}>
+                                            {currentSentenceIndex + 1} / {DEMO_SENTENCES.length}
+                                        </Text>
+                                    </View>
                                 </View>
                             </View>
+                            <Text style={styles.demoLabel}>Votre traduction :</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Écrivez votre traduction ici..."
+                                placeholderTextColor={COLORS.text.light}
+                                value={translation}
+                                onChangeText={setTranslation}
+                                multiline
+                            />
 
-                            {/* Sentence Counter */}
-                            <Text style={styles.sentenceCounter}>
-                                {currentSentenceIndex + 1} / {DEMO_SENTENCES.length} phrases
-                            </Text>
-                        </View>
-                        <Text style={styles.demoLabel}>Votre traduction :</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Écrivez votre traduction ici..."
-                            placeholderTextColor={COLORS.text.light}
-                            value={translation}
-                            onChangeText={setTranslation}
-                            multiline
-                        />
+                            {/* Answer Box - shows when user clicks 'Voir la réponse' */}
+                            {showAnswer && (
+                                <View style={styles.answerBox}>
+                                    <Text style={styles.answerLabel}>Réponse correcte :</Text>
+                                    <Text style={styles.answerText}>{currentSentence.reference}</Text>
+                                    <TouchableOpacity
+                                        style={styles.hideAnswerButton}
+                                        onPress={handleHideAnswer}
+                                    >
+                                        <Text style={styles.hideAnswerText}>Masquer</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
 
-                        {/* Answer Box - shows when user clicks 'Voir la réponse' */}
-                        {showAnswer && (
-                            <View style={styles.answerBox}>
-                                <Text style={styles.answerLabel}>Réponse correcte :</Text>
-                                <Text style={styles.answerText}>{currentSentence.reference}</Text>
+                            {/* Two Buttons */}
+                            <View style={styles.buttonRow}>
                                 <TouchableOpacity
-                                    style={styles.hideAnswerButton}
-                                    onPress={handleHideAnswer}
+                                    style={styles.secondaryButton}
+                                    onPress={handleShowAnswer}
                                 >
-                                    <Text style={styles.hideAnswerText}>Masquer</Text>
+                                    <Text style={styles.secondaryButtonText}>Voir la réponse</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.primaryButton, !translation.trim() && styles.primaryButtonDisabled]}
+                                    onPress={handleVerify}
+                                    disabled={!translation.trim()}
+                                >
+                                    <Text style={styles.primaryButtonText}>Analyser ma phrase</Text>
                                 </TouchableOpacity>
                             </View>
-                        )}
-
-                        {/* Two Buttons */}
-                        <View style={styles.buttonRow}>
-                            <TouchableOpacity
-                                style={styles.secondaryButton}
-                                onPress={handleShowAnswer}
-                            >
-                                <Text style={styles.secondaryButtonText}>Voir la réponse</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.primaryButton, !translation.trim() && styles.primaryButtonDisabled]}
-                                onPress={handleVerify}
-                                disabled={!translation.trim()}
-                            >
-                                <Text style={styles.primaryButtonText}>Analyser ma phrase</Text>
-                            </TouchableOpacity>
                         </View>
-                    </Card>
-                </View>
+                    </View>
 
-                {/* Features Button */}
-                <View style={styles.featuresButtonContainer}>
-                    <TouchableOpacity
-                        style={styles.featuresButton}
-                        onPress={() => setShowFeatures(true)}
-                    >
-                        <Text style={styles.featuresButtonText}>Fonctionnalités supplémentaires</Text>
-                        <Text style={styles.featuresButtonArrow}>→</Text>
-                    </TouchableOpacity>
-                </View>
-            </ScrollView>
+                    {/* Features Button */}
+                    <View style={styles.featuresButtonContainer}>
+                        <TouchableOpacity
+                            style={styles.featuresButton}
+                            onPress={() => setShowFeatures(true)}
+                        >
+                            <Text style={styles.featuresButtonText}>Fonctionnalités supplémentaires</Text>
+                            <Text style={styles.featuresButtonArrow}>→</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
 
             {/* Features Modal */}
             <Modal
@@ -333,6 +388,9 @@ const styles = StyleSheet.create({
     demoCard: {
         padding: SPACING.lg,
     },
+    demoContent: {
+        paddingHorizontal: 0,
+    },
     demoTitle: {
         fontSize: FONT_SIZES.xl,
         fontWeight: '700',
@@ -341,47 +399,57 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     demoLabel: {
-        fontSize: FONT_SIZES.md,
+        fontSize: FONT_SIZES.sm,
         fontWeight: '600',
         color: COLORS.secondary,
-        marginBottom: SPACING.sm,
+        marginBottom: SPACING.xs,
     },
     sentenceCarouselContainer: {
-        marginBottom: SPACING.lg,
+        marginBottom: SPACING.sm,
+        overflow: 'visible',
+        paddingTop: SPACING.xs,
     },
     sentenceScrollContent: {
         alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 0,
     },
     sentenceBox: {
         backgroundColor: COLORS.white,
         padding: SPACING.lg,
-        paddingTop: SPACING.xl,
-        borderRadius: BORDER_RADIUS.lg,
-        borderWidth: 1,
-        borderColor: COLORS.border.light,
+        paddingTop: SPACING.xl + 8,
+        borderRadius: 16,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        elevation: 4,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
         minHeight: 140,
     },
+    sentenceHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: SPACING.md,
+    },
     sentenceQuote: {
-        position: 'absolute',
-        top: -8,
-        left: SPACING.md,
         backgroundColor: COLORS.primary,
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
+        marginRight: SPACING.sm,
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 5,
     },
     quoteIcon: {
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: '700',
         color: COLORS.white,
-        marginTop: -4,
+        marginTop: -2,
     },
     sentenceText: {
         fontSize: FONT_SIZES.lg,
@@ -391,24 +459,26 @@ const styles = StyleSheet.create({
         marginTop: SPACING.sm,
     },
     sentenceMetaContainer: {
+        flex: 1,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginTop: SPACING.md,
-        paddingTop: SPACING.sm,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border.light,
+        flexWrap: 'wrap',
+        gap: SPACING.xs,
     },
     sentenceMeta: {
         fontSize: FONT_SIZES.sm,
         color: COLORS.text.secondary,
-        fontWeight: '500',
+        fontWeight: '600',
+        flex: 1,
+        marginRight: SPACING.sm,
     },
     difficultyBadge: {
         backgroundColor: COLORS.primary + '15',
-        paddingHorizontal: SPACING.sm,
-        paddingVertical: 4,
-        borderRadius: BORDER_RADIUS.sm,
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.xs,
+        borderRadius: BORDER_RADIUS.md,
+        flexShrink: 0,
     },
     difficultyText: {
         fontSize: FONT_SIZES.xs,
@@ -419,35 +489,82 @@ const styles = StyleSheet.create({
         marginTop: SPACING.md,
         paddingHorizontal: SPACING.sm,
     },
+    navigationContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: SPACING.sm,
+        paddingHorizontal: SPACING.xs,
+    },
+    navButton: {
+        backgroundColor: COLORS.primary,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    navButtonDisabled: {
+        backgroundColor: COLORS.gray.light,
+        shadowOpacity: 0,
+    },
+    navButtonText: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: COLORS.white,
+    },
+    navButtonTextDisabled: {
+        color: COLORS.gray.medium,
+    },
+    progressBarWrapper: {
+        flex: 1,
+        marginHorizontal: SPACING.sm,
+        alignItems: 'center',
+    },
     progressBar: {
         height: 6,
         backgroundColor: COLORS.gray.light,
         borderRadius: 3,
         overflow: 'hidden',
+        width: '100%',
     },
     progressFill: {
         height: '100%',
         backgroundColor: COLORS.primary,
         borderRadius: 3,
     },
+    tapHint: {
+        textAlign: 'center',
+        fontSize: FONT_SIZES.xs,
+        color: COLORS.primary,
+        marginTop: SPACING.xs,
+        fontWeight: '600',
+    },
     sentenceCounter: {
         textAlign: 'center',
-        fontSize: FONT_SIZES.sm,
+        fontSize: FONT_SIZES.xs,
         color: COLORS.text.secondary,
-        marginTop: SPACING.sm,
+        marginTop: SPACING.xs,
         fontWeight: '500',
     },
     input: {
         backgroundColor: COLORS.white,
-        borderWidth: 2,
-        borderColor: COLORS.gray.medium,
-        borderRadius: BORDER_RADIUS.md,
+        borderRadius: 12,
         padding: SPACING.md,
-        fontSize: FONT_SIZES.md,
+        fontSize: 17,
         color: COLORS.text.primary,
-        minHeight: 80,
+        minHeight: 70,
         textAlignVertical: 'top',
-        marginBottom: SPACING.lg,
+        marginBottom: SPACING.sm,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
+        elevation: 1,
     },
     demoButton: {
         marginBottom: 0,
@@ -462,9 +579,12 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         paddingVertical: SPACING.lg,
         paddingHorizontal: SPACING.lg,
-        borderRadius: BORDER_RADIUS.lg,
-        borderWidth: 1,
-        borderColor: COLORS.border.light,
+        borderRadius: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
+        elevation: 1,
     },
     featuresButtonText: {
         fontSize: FONT_SIZES.md,
@@ -589,29 +709,27 @@ const styles = StyleSheet.create({
         gap: SPACING.md,
     },
     secondaryButton: {
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.gray.light,
         paddingVertical: SPACING.md,
-        borderRadius: BORDER_RADIUS.lg,
+        borderRadius: 12,
         alignItems: 'center',
-        borderWidth: 2,
-        borderColor: COLORS.primary,
     },
     secondaryButtonText: {
-        fontSize: FONT_SIZES.md,
+        fontSize: 17,
         fontWeight: '600',
-        color: COLORS.primary,
+        color: COLORS.text.primary,
     },
     primaryButton: {
         backgroundColor: COLORS.primary,
         paddingVertical: SPACING.md,
-        borderRadius: BORDER_RADIUS.lg,
+        borderRadius: 12,
         alignItems: 'center',
     },
     primaryButtonDisabled: {
         opacity: 0.5,
     },
     primaryButtonText: {
-        fontSize: FONT_SIZES.md,
+        fontSize: 17,
         fontWeight: '600',
         color: COLORS.white,
     },

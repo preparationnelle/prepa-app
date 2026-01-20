@@ -57,10 +57,10 @@ const styles = StyleSheet.create({
     button: {
         paddingVertical: SPACING.md,
         paddingHorizontal: SPACING.xl,
-        borderRadius: BORDER_RADIUS.lg,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 52,
+        minHeight: 50,
     },
     primaryButton: {
         backgroundColor: COLORS.primary,
@@ -69,17 +69,15 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.secondary,
     },
     outlineButton: {
-        backgroundColor: 'transparent',
-        borderWidth: 2,
-        borderColor: COLORS.border.medium,
+        backgroundColor: COLORS.gray.light,
+        borderWidth: 0,
     },
     disabledButton: {
         opacity: 0.5,
     },
     text: {
-        fontSize: FONT_SIZES.md,
+        fontSize: 17,
         fontWeight: '600',
-        letterSpacing: 0.3,
     },
     primaryText: {
         color: COLORS.white,

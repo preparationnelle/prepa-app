@@ -107,3 +107,96 @@ Instructions for specific fields:
         };
     }
 };
+
+export interface ConversationMessage {
+    role: 'user' | 'assistant';
+    content: string;
+}
+
+export interface FeedbackQuestionContext {
+    frenchSentence: string;
+    userTranslation: string;
+    referenceTranslation: string;
+    aiFeedback: string;
+    score: number;
+    conversationHistory: ConversationMessage[];
+}
+
+export const answerFeedbackQuestion = async (
+    question: string,
+    context: FeedbackQuestionContext
+): Promise<string> => {
+    try {
+        console.log('🤖 AI Service: Answering feedback question');
+
+        if (!OPENAI_API_KEY) {
+            return "⚠️ **Erreur de configuration**\n\nLa clé API OpenAI est manquante.";
+        }
+
+        const systemPrompt = `Tu es un professeur d'anglais sympa qui discute avec un étudiant francophone. Tu réponds dans un style chat, de manière courte et directe.
+
+**Contexte de l'exercice:**
+- Phrase française: "${context.frenchSentence}"
+- Sa traduction: "${context.userTranslation}"
+- Traduction correcte: "${context.referenceTranslation}"
+- Score: ${context.score}/100
+
+**Feedback donné:**
+${context.aiFeedback}
+
+**Règles IMPORTANTES:**
+1. Réponds en 2-4 phrases MAX, sauf si on te demande plus de détails
+2. Sois direct et conversationnel, comme dans un chat
+3. Utilise des exemples courts si nécessaire
+4. Réponds en français
+5. Pas de listes à puces sauf si vraiment nécessaire
+6. Ton amical mais pédagogique`;
+
+        // Build messages array with conversation history
+        const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+            { role: 'system', content: systemPrompt }
+        ];
+
+        // Add conversation history
+        for (const msg of context.conversationHistory) {
+            messages.push({ role: msg.role, content: msg.content });
+        }
+
+        // Add the current question
+        messages.push({ role: 'user', content: question });
+
+        const response = await fetch(OPENAI_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'gpt-4o',
+                messages: messages,
+                temperature: 0.7,
+            })
+        });
+
+        console.log('📡 API Response status:', response.status);
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('❌ OpenAI API error:', errorData);
+            throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content;
+
+        if (!content) {
+            throw new Error('No content in response');
+        }
+
+        return content;
+
+    } catch (error) {
+        console.error('Error answering question:', error);
+        return `**Erreur**\n\nUne erreur est survenue : ${error instanceof Error ? error.message : 'Erreur inconnue'}`;
+    }
+};
